@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 250" width="350" height="250" fill="none">
+  <!-- Exact GDG Color Brackets Logo with Black Outlines matching User Image -->
+  <g stroke="#1A1A1A" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <!-- LEFT BRACKET < -->
+    <!-- Blue Bottom-Left Pill -->
+    <path d="M 68 125 L 142 200" stroke="#1A1A1A" stroke-width="48" stroke-linecap="round" />
+    <path d="M 68 125 L 142 200" stroke="#4285F4" stroke-width="36" stroke-linecap="round" />
+
+    <!-- Red Top-Left Pill overlapping Blue -->
+    <path d="M 142 50 L 68 125" stroke="#1A1A1A" stroke-width="48" stroke-linecap="round" />
+    <path d="M 142 50 L 68 125" stroke="#EA4335" stroke-width="36" stroke-linecap="round" />
+
+    <!-- Dividing contour at vertex -->
+    <path d="M 68 125 L 115 172" stroke="#1A1A1A" stroke-width="8" stroke-linecap="round" />
+
+    <!-- RIGHT BRACKET > -->
+    <!-- Yellow Bottom-Right Pill -->
+    <path d="M 282 125 L 208 200" stroke="#1A1A1A" stroke-width="48" stroke-linecap="round" />
+    <path d="M 282 125 L 208 200" stroke="#FBBC05" stroke-width="36" stroke-linecap="round" />
+
+    <!-- Green Top-Right Pill overlapping Yellow -->
+    <path d="M 208 50 L 282 125" stroke="#1A1A1A" stroke-width="48" stroke-linecap="round" />
+    <path d="M 208 50 L 282 125" stroke="#34A853" stroke-width="36" stroke-linecap="round" />
+
+    <!-- Dividing contour at vertex -->
+    <path d="M 282 125 L 235 172" stroke="#1A1A1A" stroke-width="8" stroke-linecap="round" />
+  </g>
+</svg>

@@ -1,0 +1,395 @@
+/* ==========================================================================
+   GDG Amity University Noida - Core Design System & Global Styles
+   ========================================================================== */
+
+:root {
+  /* Google Brand Color Tokens */
+  --google-blue: #4285F4;
+  --google-blue-hover: #1A73E8;
+  --google-blue-surface: #E8F0FE;
+  --google-blue-glow: rgba(66, 133, 244, 0.2);
+
+  --google-red: #EA4335;
+  --google-red-hover: #D93025;
+  --google-red-surface: #FCE8E6;
+  --google-red-glow: rgba(234, 67, 53, 0.2);
+
+  --google-yellow: #FBBC05;
+  --google-yellow-hover: #F29900;
+  --google-yellow-surface: #FEF7E0;
+  --google-yellow-glow: rgba(251, 188, 5, 0.25);
+
+  --google-green: #34A853;
+  --google-green-hover: #1E8E3E;
+  --google-green-surface: #E6F4EA;
+  --google-green-glow: rgba(52, 168, 83, 0.2);
+
+  /* Amity Brand Accent */
+  --amity-navy: #0D2C54;
+  --amity-gold: #F5A623;
+
+  /* Neutrals & Surfaces */
+  --bg-page: #F8F9FA;
+  --bg-card: #FFFFFF;
+  --bg-subtle: #F1F3F4;
+  --border-subtle: #DADCE0;
+  --border-focus: #4285F4;
+
+  --text-primary: #202124;
+  --text-secondary: #5F6368;
+  --text-tertiary: #80868B;
+  --text-disabled: #BDC1C6;
+
+  /* Typography */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Outfit', var(--font-sans);
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-pixel: 'Press Start 2P', monospace;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(60, 64, 67, 0.15), 0 1px 3px 1px rgba(60, 64, 67, 0.08);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 12px 32px -4px rgba(32, 33, 36, 0.08), 0 4px 12px rgba(32, 33, 36, 0.04);
+  --shadow-xl: 0 24px 48px -12px rgba(32, 33, 36, 0.14), 0 8px 16px -4px rgba(32, 33, 36, 0.06);
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* CSS Reset & Defaults */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  line-height: 1.5;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(66, 133, 244, 0.06) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(234, 67, 53, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(52, 168, 83, 0.05) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(251, 188, 5, 0.06) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Top Google Spectrum 4-Color Stripe */
+.google-spectrum-bar {
+  display: flex;
+  width: 100%;
+  height: 4px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+}
+.google-spectrum-bar .bar-blue { flex: 1; background: var(--google-blue); }
+.google-spectrum-bar .bar-red { flex: 1; background: var(--google-red); }
+.google-spectrum-bar .bar-yellow { flex: 1; background: var(--google-yellow); }
+.google-spectrum-bar .bar-green { flex: 1; background: var(--google-green); }
+
+/* Global Navigation Header */
+.portal-header {
+  position: sticky;
+  top: 4px;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: box-shadow var(--transition-smooth);
+}
+
+.portal-header:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.header-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.header-branding {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.gdg-logo-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.gdg-official-logo {
+  height: 28px;
+  width: auto;
+  max-width: 240px;
+  object-fit: contain;
+  transition: transform var(--transition-bounce);
+}
+
+.gdg-logo-wrapper:hover .gdg-official-logo {
+  transform: scale(1.02);
+}
+
+.brand-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--border-subtle);
+}
+
+.amity-logo-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.amity-official-logo {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  transition: transform var(--transition-bounce);
+}
+
+.amity-logo-wrapper:hover .amity-official-logo {
+  transform: scale(1.03);
+}
+
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Chapter Live Badge */
+.chapter-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--google-green);
+  box-shadow: 0 0 0 0 rgba(52, 168, 83, 0.4);
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0% { box-shadow: 0 0 0 0 rgba(52, 168, 83, 0.6); }
+  70% { box-shadow: 0 0 0 8px rgba(52, 168, 83, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 168, 83, 0); }
+}
+
+/* Tool Buttons (Sound, Dino) */
+.tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.45rem 0.85rem;
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tool-btn:hover {
+  background: var(--bg-subtle);
+  border-color: var(--google-blue);
+  transform: translateY(-1px);
+}
+
+.dino-tool-btn {
+  background: var(--google-blue-surface);
+  border-color: rgba(66, 133, 244, 0.3);
+  color: var(--google-blue);
+}
+
+.dino-tool-btn:hover {
+  background: #D2E3FC;
+}
+
+.draft-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  padding: 0.3rem 0.6rem;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.draft-indicator.saved-active {
+  color: var(--google-green);
+  background: var(--google-green-surface);
+}
+
+.draft-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Main Content Area */
+.portal-main {
+  padding: 2rem 1.25rem 5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.content-wrapper {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Hero Section */
+.portal-hero {
+  text-align: center;
+  margin-bottom: 2.25rem;
+  padding: 1rem 0;
+}
+
+.hero-chip-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.95rem;
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1rem;
+}
+
+.hero-heading {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin-bottom: 0.85rem;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--google-blue) 0%, #1A73E8 50%, var(--google-green) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-subtext {
+  font-size: 1.0625rem;
+  color: var(--text-secondary);
+  max-width: 680px;
+  margin: 0 auto 1.5rem;
+  line-height: 1.6;
+}
+
+.hero-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+}
+
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.3rem 0.75rem;
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+}
+
+.tag-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.tag-dot.blue { background: var(--google-blue); }
+.tag-dot.red { background: var(--google-red); }
+.tag-dot.yellow { background: var(--google-yellow); }
+.tag-dot.green { background: var(--google-green); }
+
+/* Responsive Media Queries */
+@media (max-width: 768px) {
+  .header-container {
+    padding: 0.6rem 1rem;
+  }
+  .gdg-official-logo {
+    height: 22px;
+    max-width: 170px;
+  }
+  .amity-official-logo {
+    height: 26px;
+  }
+  .chapter-badge {
+    display: none;
+  }
+  .tool-label {
+    display: none;
+  }
+  .tool-btn {
+    padding: 0.45rem;
+  }
+  .hero-heading {
+    font-size: 1.85rem;
+  }
+  .hero-subtext {
+    font-size: 0.9375rem;
+  }
+  .portal-main {
+    padding: 1.25rem 0.875rem 4rem;
+  }
+}

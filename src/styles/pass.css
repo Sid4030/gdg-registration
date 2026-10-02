@@ -1,0 +1,334 @@
+/* ==========================================================================
+   GDG Amity University Noida - Digital Candidate Pass & Success View
+   ========================================================================== */
+
+.success-screen-wrapper {
+  max-width: 650px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.success-header-celebrate {
+  margin-bottom: 2rem;
+}
+
+.success-badge-icon {
+  font-size: 3.5rem;
+  margin-bottom: 0.75rem;
+  animation: bounce-celebrate 1s infinite alternate cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes bounce-celebrate {
+  from { transform: translateY(0) scale(1); }
+  to { transform: translateY(-8px) scale(1.08); }
+}
+
+.success-title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+
+.success-sub {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+/* --------------------------------------------------------------------------
+   Digital Holographic Pass Card
+   -------------------------------------------------------------------------- */
+.pass-card-container {
+  perspective: 1000px;
+  margin: 0 auto 2rem;
+}
+
+.pass-card {
+  position: relative;
+  background: #FFFFFF;
+  border: 1px solid rgba(218, 220, 224, 0.9);
+  border-radius: 20px;
+  box-shadow: 
+    0 20px 40px -15px rgba(32, 33, 36, 0.12),
+    0 0 0 1px rgba(66, 133, 244, 0.15);
+  padding: 1.75rem 2rem;
+  text-align: left;
+  overflow: hidden;
+  transition: transform var(--transition-bounce), box-shadow var(--transition-smooth);
+}
+
+.pass-card:hover {
+  transform: translateY(-4px) rotateX(2deg) rotateY(-1deg);
+  box-shadow: 
+    0 28px 50px -12px rgba(32, 33, 36, 0.18),
+    0 0 0 2px rgba(66, 133, 244, 0.3);
+}
+
+/* Hologram foil shimmer across pass */
+.pass-hologram-overlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 60%;
+  left: -60%;
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    rgba(66, 133, 244, 0.12) 35%,
+    rgba(234, 67, 53, 0.12) 45%,
+    rgba(251, 188, 5, 0.12) 55%,
+    rgba(52, 168, 83, 0.12) 65%,
+    transparent 80%
+  );
+  pointer-events: none;
+  transform: skewX(-20deg);
+}
+
+.pass-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1.25rem;
+  border-bottom: 1.5px dashed var(--border-subtle);
+  margin-bottom: 1.5rem;
+}
+
+.pass-logos {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.pass-gdg-icon {
+  width: 44px;
+  height: auto;
+}
+
+.pass-chapter-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.pass-org {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pass-suborg {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--google-blue);
+}
+
+.pass-type-chip {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--google-green);
+  background: var(--google-green-surface);
+  border: 1px solid rgba(52, 168, 83, 0.3);
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.08em;
+}
+
+.pass-candidate-box {
+  margin-bottom: 1.5rem;
+}
+
+.pass-label {
+  font-size: 0.6875rem;
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.pass-candidate-name {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.pass-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem 1.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.pass-id-val {
+  font-family: var(--font-mono);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--google-blue);
+  background: var(--google-blue-surface);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+}
+
+.pass-domain-val {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--google-red);
+}
+
+.pass-val {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Pass Footer with barcode decor */
+.pass-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 1.25rem;
+  border-top: 1.5px dashed var(--border-subtle);
+}
+
+.pass-barcode-decor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.barcode-lines {
+  width: 140px;
+  height: 24px;
+  background: repeating-linear-gradient(
+    90deg,
+    #202124 0px,
+    #202124 2px,
+    transparent 2px,
+    transparent 4px,
+    #202124 4px,
+    #202124 7px,
+    transparent 7px,
+    transparent 9px
+  );
+}
+
+.pass-barcode-text {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
+}
+
+.pass-security-seal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.seal-ring {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--google-yellow);
+  background: var(--google-yellow-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: #B06000;
+  padding: 0.2rem;
+  transform: rotate(-10deg);
+}
+
+/* Actions Row */
+.pass-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  margin-bottom: 2rem;
+}
+
+/* Next Steps Info Box */
+.next-steps-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  text-align: left;
+}
+
+.next-steps-card h4 {
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.85rem;
+}
+
+.next-steps-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.next-steps-list li {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  position: relative;
+  padding-left: 1.35rem;
+}
+
+.next-steps-list li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: var(--google-blue);
+  font-weight: bold;
+}
+
+.next-steps-list strong {
+  color: var(--text-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Print Styles
+   -------------------------------------------------------------------------- */
+@media print {
+  body {
+    background: #FFFFFF !important;
+  }
+  .portal-header,
+  .google-spectrum-bar,
+  .dino-bg-container,
+  .pass-actions-row,
+  .next-steps-card,
+  .portal-hero,
+  .portal-stepper {
+    display: none !important;
+  }
+  .success-screen-wrapper {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+  .pass-card {
+    box-shadow: none !important;
+    border: 2px solid #202124 !important;
+    page-break-inside: avoid;
+  }
+}
