@@ -352,9 +352,13 @@ export default function App() {
       })
     };
 
-    // Try posting to secure MongoDB Atlas backend
+    // Post to secure MongoDB Atlas backend (dynamically relative for Vercel & local proxy)
     try {
-      const response = await fetch('http://localhost:5001/api/register', {
+      const apiEndpoint = import.meta.env.VITE_API_URL
+        ? `${import.meta.env.VITE_API_URL}/api/register`
+        : '/api/register';
+
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

@@ -17,15 +17,20 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5001;
-const DATA_DIR = path.join(__dirname, 'data');
+const isVercel = Boolean(process.env.VERCEL);
+const DATA_DIR = isVercel ? path.join('/tmp', 'gdg_data') : path.join(__dirname, 'data');
 const BACKUP_FILE = path.join(DATA_DIR, 'candidates.json');
 
 // Ensure local backup directory exists
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-if (!fs.existsSync(BACKUP_FILE)) {
-  fs.writeFileSync(BACKUP_FILE, JSON.stringify([], null, 2), 'utf8');
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+  if (!fs.existsSync(BACKUP_FILE)) {
+    fs.writeFileSync(BACKUP_FILE, JSON.stringify([], null, 2), 'utf8');
+  }
+} catch (e) {
+  console.warn('Local storage directory initialization note:', e.message);
 }
 
 // -------------------------------------------------------------
@@ -137,24 +142,50 @@ const candidateSchema = new mongoose.Schema(
 
 const Candidate = mongoose.model('Candidate', candidateSchema);
 
-// Connect to MongoDB Atlas if URI is provided
-const mongoURI = process.env.MONGODB_URI;
-if (mongoURI && mongoURI.trim() !== '') {
-  mongoose
-    .connect(mongoURI, {
-      serverSelectionTimeoutMS: 5000
-    })
-    .then(() => {
-      isMongoConnected = true;
-      console.log('✅ Connected to MongoDB Atlas successfully.');
-    })
-    .catch((err) => {
-      isMongoConnected = false;
-      console.warn('⚠️ MongoDB Atlas connection error, using resilient local storage:', err.message);
-    });
-} else {
-  console.log('ℹ No MONGODB_URI provided in .env; operating in resilient local storage mode.');
-}
+// Connect to MongoDB Atlas if URI is provided with serverless caching
+let cachedMongoPromise = null;
+const connectMongo = async () => {
+  if (mongoose.connection.readyState === 1) {
+    isMongoConnected = true;
+    return mongoose.connection;
+  }
+  const mongoURI = process.env.MONGODB_URI;
+  if (!mongoURI || mongoURI.trim() === '') {
+    isMongoConnected = false;
+    return null;
+  }
+  if (!cachedMongoPromise) {
+    cachedMongoPromise = mongoose
+      .connect(mongoURI.trim(), {
+        serverSelectionTimeoutMS: 5000
+      })
+      .then((conn) => {
+        isMongoConnected = true;
+        console.log('✅ Connected to MongoDB Atlas successfully.');
+        return conn;
+      })
+      .catch((err) => {
+        isMongoConnected = false;
+        cachedMongoPromise = null;
+        console.warn('⚠️ MongoDB Atlas connection error, using resilient local storage:', err.message);
+        return null;
+      });
+  }
+  return cachedMongoPromise;
+};
+
+// Initial startup connection attempt
+connectMongo();
+
+// Serverless middleware to ensure DB connection is active before processing requests
+app.use(async (req, res, next) => {
+  if (process.env.MONGODB_URI && mongoose.connection.readyState !== 1) {
+    try {
+      await connectMongo();
+    } catch {}
+  }
+  next();
+});
 
 // Helper to save to local backup
 const saveLocalBackup = (candidate) => {
@@ -560,8 +591,13 @@ app.get('/api/stats', requireAdminAuth, async (req, res) => {
   }
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`🚀 GDG Amity Registration Server running on http://localhost:${PORT}`);
-  console.log(`🛡 Security enabled: Helmet, CORS, Rate Limiting, XSS Sanitization`);
-});
+// Export app for Vercel Serverless Function & test suites
+export default app;
+
+// Start Server locally if not running on Vercel
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 GDG Amity Registration Server running on http://localhost:${PORT}`);
+    console.log(`🛡 Security enabled: Helmet, CORS, Rate Limiting, XSS Sanitization`);
+  });
+}

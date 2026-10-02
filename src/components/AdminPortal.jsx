@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { sound } from '../utils/sound';
 
-const API_BASE = 'http://localhost:5001';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 export default function AdminPortal() {
   const [token, setToken] = useState(() => sessionStorage.getItem('gdg_admin_token') || '');
