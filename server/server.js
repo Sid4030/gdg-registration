@@ -10,10 +10,11 @@ import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
-dotenv.config();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -316,8 +317,9 @@ app.post('/api/register', registrationLimiter, async (req, res) => {
 // -------------------------------------------------------------
 // 3.5 ADMIN AUTHENTICATION & SECURE SESSIONS
 // -------------------------------------------------------------
-const ADMIN_USER = 'meowmeow12';
-const ADMIN_PASS = 'meowcatmeow1234';
+// Secure: Credentials read exclusively from environment variables (configured in .env / Vercel)
+const getAdminUser = () => (process.env.ADMIN_USER ? process.env.ADMIN_USER.trim() : '');
+const getAdminPass = () => (process.env.ADMIN_PASSWORD ? process.env.ADMIN_PASSWORD : '');
 const adminSessions = new Map(); // token -> { username, createdAt, expiresAt }
 
 // Strict Rate Limiting for Admin Authentication (max 10 attempts per 15 minutes per IP)
@@ -368,6 +370,16 @@ app.post('/api/admin/login', adminLoginLimiter, (req, res) => {
   try {
     const { username, password } = req.body || {};
 
+    const configuredUser = getAdminUser();
+    const configuredPass = getAdminPass();
+
+    if (!configuredUser || !configuredPass) {
+      return res.status(500).json({
+        success: false,
+        error: 'Administrator credentials not configured in environment variables (ADMIN_USER, ADMIN_PASSWORD).'
+      });
+    }
+
     if (!username || !password) {
       return res.status(400).json({ success: false, error: 'Username and password are required.' });
     }
@@ -375,9 +387,9 @@ app.post('/api/admin/login', adminLoginLimiter, (req, res) => {
     const cleanUser = String(username).trim();
     const cleanPass = String(password);
 
-    // Constant-time comparison for username & password
-    const isUserValid = cleanUser === ADMIN_USER;
-    const isPassValid = cleanPass === ADMIN_PASS;
+    // Constant-time check for username & password
+    const isUserValid = cleanUser === configuredUser;
+    const isPassValid = cleanPass === configuredPass;
 
     if (!isUserValid || !isPassValid) {
       return res.status(401).json({
@@ -391,18 +403,18 @@ app.post('/api/admin/login', adminLoginLimiter, (req, res) => {
     const expiresAt = Date.now() + 8 * 60 * 60 * 1000; // 8 hours duration
 
     adminSessions.set(token, {
-      username: ADMIN_USER,
+      username: configuredUser,
       createdAt: Date.now(),
       expiresAt
     });
 
-    console.log(`🛡️ Admin session established for ${ADMIN_USER} from IP ${req.ip || '127.0.0.1'}`);
+    console.log(`🛡️ Admin session established for ${configuredUser} from IP ${req.ip || '127.0.0.1'}`);
 
     return res.json({
       success: true,
       message: 'Administrator authentication verified.',
       token,
-      admin: ADMIN_USER,
+      admin: configuredUser,
       expiresAt
     });
   } catch (err) {
