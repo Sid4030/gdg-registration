@@ -146,10 +146,13 @@ export default function App() {
     return <AdminPortal />;
   }
 
-  // Lenis smooth scroll initialization
+  // Lenis smooth scroll initialization (Optimized: native 120Hz hardware touch for mobile, silky wheel on desktop)
   useEffect(() => {
+    const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    if (isTouch) return;
+
     const lenis = new Lenis({
-      duration: 1.2,
+      duration: 0.9,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true
     });
