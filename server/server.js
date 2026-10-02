@@ -315,12 +315,46 @@ app.post('/api/register', registrationLimiter, async (req, res) => {
 });
 
 // -------------------------------------------------------------
-// 3.5 ADMIN AUTHENTICATION & SECURE SESSIONS
+// 3.5 ADMIN AUTHENTICATION & STATELESS SIGNED SESSIONS
 // -------------------------------------------------------------
 // Secure: Credentials read exclusively from environment variables (configured in .env / Vercel)
 const getAdminUser = () => (process.env.ADMIN_USER ? process.env.ADMIN_USER.trim() : '');
 const getAdminPass = () => (process.env.ADMIN_PASSWORD ? process.env.ADMIN_PASSWORD : '');
-const adminSessions = new Map(); // token -> { username, createdAt, expiresAt }
+const getJwtSecret = () => process.env.ADMIN_JWT_SECRET || process.env.ADMIN_PASSWORD || 'gdg-amity-admin-2026-secure-key';
+
+// Cryptographically sign session token (Stateless: survives server restarts & serverless cold starts)
+function signAdminToken(username) {
+  const payload = {
+    u: username,
+    iat: Date.now(),
+    exp: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
+  };
+  const payloadB64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const hmac = crypto.createHmac('sha256', getJwtSecret());
+  hmac.update(payloadB64);
+  const signature = hmac.digest('base64url');
+  return `${payloadB64}.${signature}`;
+}
+
+// Verify cryptographic signature and expiration of session token
+function verifyAdminToken(token) {
+  if (!token || typeof token !== 'string') return null;
+  const parts = token.split('.');
+  if (parts.length !== 2) return null;
+  const [payloadB64, signature] = parts;
+  try {
+    const hmac = crypto.createHmac('sha256', getJwtSecret());
+    hmac.update(payloadB64);
+    const expectedSignature = hmac.digest('base64url');
+    if (signature !== expectedSignature) return null;
+
+    const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
+    if (!payload || !payload.exp || Date.now() > payload.exp) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
 
 // Strict Rate Limiting for Admin Authentication (max 10 attempts per 15 minutes per IP)
 const adminLoginLimiter = rateLimit({
@@ -341,23 +375,22 @@ const requireAdminAuth = (req, res, next) => {
     ? authHeader.split(' ')[1]
     : (req.headers['x-admin-token'] || req.query.token);
 
-  if (!token || !adminSessions.has(token)) {
+  if (!token) {
     return res.status(401).json({
       success: false,
       error: 'Unauthorized access. Valid administrator session required.'
     });
   }
 
-  const session = adminSessions.get(token);
-  if (Date.now() > session.expiresAt) {
-    adminSessions.delete(token);
+  const payload = verifyAdminToken(token);
+  if (!payload) {
     return res.status(401).json({
       success: false,
-      error: 'Administrator session expired. Please sign in again.'
+      error: 'Administrator session expired or invalid. Please sign in again.'
     });
   }
 
-  req.adminUser = session.username;
+  req.adminUser = payload.u;
   next();
 };
 
@@ -398,17 +431,11 @@ app.post('/api/admin/login', adminLoginLimiter, (req, res) => {
       });
     }
 
-    // Generate cryptographically secure session token
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = Date.now() + 8 * 60 * 60 * 1000; // 8 hours duration
+    // Generate stateless cryptographically signed token (Valid for 24h, survives restarts)
+    const token = signAdminToken(configuredUser);
+    const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
 
-    adminSessions.set(token, {
-      username: configuredUser,
-      createdAt: Date.now(),
-      expiresAt
-    });
-
-    console.log(`🛡️ Admin session established for ${configuredUser} from IP ${req.ip || '127.0.0.1'}`);
+    console.log(`🛡️ Admin session authenticated for ${configuredUser} from IP ${req.ip || '127.0.0.1'}`);
 
     return res.json({
       success: true,
@@ -424,13 +451,6 @@ app.post('/api/admin/login', adminLoginLimiter, (req, res) => {
 
 // Admin Logout Endpoint
 app.post('/api/admin/logout', (req, res) => {
-  const authHeader = req.headers.authorization;
-  const token = (authHeader && authHeader.startsWith('Bearer '))
-    ? authHeader.split(' ')[1]
-    : req.headers['x-admin-token'];
-  if (token) {
-    adminSessions.delete(token);
-  }
   return res.json({ success: true, message: 'Logged out successfully.' });
 });
 

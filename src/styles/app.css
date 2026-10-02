@@ -646,7 +646,7 @@ body {
   font-weight: 700;
   background: #E8F0FE;
   color: #1A73E8;
-  padding: 0.2rem 0.55rem;
+  padding: 0.25rem 0.65rem;
   border-radius: 6px;
   letter-spacing: 0.04em;
 }
@@ -664,18 +664,19 @@ body {
   font-weight: 700;
   color: #5F6368;
   background: #F1F3F4;
-  padding: 0.2rem 0.55rem;
+  padding: 0.25rem 0.65rem;
   border-radius: 6px;
 }
 
-.dino-unified-track {
+/* Desktop Stepper Track */
+.timeline-desktop-stepper {
   position: relative;
-  padding-top: 28px;
+  padding-top: 10px;
 }
 
-.dino-base-ground-bar {
+.timeline-ground-track {
   position: absolute;
-  top: 47px;
+  top: 28px;
   left: 20px;
   right: 20px;
   height: 4px;
@@ -684,7 +685,7 @@ body {
   z-index: 1;
 }
 
-.dino-active-ground-fill {
+.timeline-ground-fill {
   height: 100%;
   background: #1A73E8;
   border-radius: 4px;
@@ -693,7 +694,7 @@ body {
   box-shadow: 0 0 10px rgba(26, 115, 232, 0.45);
 }
 
-.dino-ground-leader-pulse {
+.timeline-leader-dot {
   position: absolute;
   right: -5px;
   top: -3px;
@@ -704,23 +705,14 @@ body {
   box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.25);
 }
 
-.pixel-dino-runner {
-  position: absolute;
-  top: 31px;
-  left: 4px;
-  z-index: 10;
-  pointer-events: none;
-  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.25));
-}
-
-.dino-nodes-row {
+.timeline-nodes-row {
   display: flex;
   justify-content: space-between;
   position: relative;
   z-index: 3;
 }
 
-.dino-node-btn {
+.timeline-node-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -733,7 +725,7 @@ body {
   transition: transform 0.2s ease;
 }
 
-.dino-node-circle {
+.timeline-node-circle {
   width: 38px;
   height: 38px;
   border-radius: 50%;
@@ -750,13 +742,13 @@ body {
   transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.dino-node-btn:hover .dino-node-circle {
+.timeline-node-btn:hover .timeline-node-circle {
   border-color: #1A73E8;
   color: #1A73E8;
   transform: translateY(-2px);
 }
 
-.dino-node-label {
+.timeline-node-label {
   font-size: 0.75rem;
   font-weight: 600;
   color: #70757A;
@@ -764,7 +756,7 @@ body {
   transition: color 0.2s ease;
 }
 
-.dino-node-btn.is-active .dino-node-circle {
+.timeline-node-btn.is-active .timeline-node-circle {
   background: #1A73E8;
   border-color: #1A73E8;
   color: #FFFFFF;
@@ -772,21 +764,26 @@ body {
   box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.22), 0 4px 12px rgba(26, 115, 232, 0.35);
 }
 
-.dino-node-btn.is-active .dino-node-label {
+.timeline-node-btn.is-active .timeline-node-label {
   color: #1A73E8;
   font-weight: 700;
 }
 
-.dino-node-btn.is-completed .dino-node-circle {
+.timeline-node-btn.is-completed .timeline-node-circle {
   background: #1E8E3E;
   border-color: #1E8E3E;
   color: #FFFFFF;
   box-shadow: 0 2px 8px rgba(30, 142, 62, 0.25);
 }
 
-.dino-node-btn.is-completed .dino-node-label {
+.timeline-node-btn.is-completed .timeline-node-label {
   color: #202124;
   font-weight: 600;
+}
+
+/* Mobile Stepper: Hidden on Desktop */
+.timeline-mobile-stepper {
+  display: none;
 }
 
 
@@ -883,10 +880,12 @@ body {
    Form Card Container & Common Components
    -------------------------------------------------------------------------- */
 .form-card-container {
-  background: #FFFFFF;
-  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
   overflow: hidden;
   position: relative;
 }
@@ -1540,8 +1539,10 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 1.25rem 2.25rem;
-  background: #FFFFFF;
-  border-top: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(218, 220, 224, 0.65);
 }
 
 .footer-left, .footer-right {
@@ -1971,28 +1972,100 @@ body {
     font-size: 2rem;
   }
 
-  .dino-unified-track {
-    padding-top: 24px;
-  }
-
-  .pixel-dino-runner {
-    top: 26px;
-    left: 2px;
-  }
-
-  .pixel-dino-runner .dino-sprite-svg {
-    width: 26px;
-    height: 26px;
-  }
-
-  .dino-node-label {
+  .timeline-desktop-stepper {
     display: none;
   }
 
-  .dino-node-circle {
-    width: 30px;
-    height: 30px;
+  .timeline-mobile-stepper {
+    display: block;
+    margin-top: 0.5rem;
+  }
+
+  .mobile-progress-track {
+    width: 100%;
+    height: 6px;
+    background: #E8EAED;
+    border-radius: 9999px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+
+  .mobile-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4285F4, #1A73E8);
+    border-radius: 9999px;
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 8px rgba(26, 115, 232, 0.5);
+  }
+
+  .mobile-milestones-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.75rem;
+    padding: 0 2px;
+  }
+
+  .mobile-milestone-pill {
+    background: transparent;
+    border: none;
+    padding: 6px 2px;
+    cursor: pointer;
+    outline: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    touch-action: manipulation;
+  }
+
+  .mobile-pip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    border: 2px solid #DADCE0;
+    color: #5F6368;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    font-family: var(--font-display);
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .mobile-milestone-pill.is-active .mobile-pip {
+    width: 28px;
+    height: 28px;
+    background: #1A73E8;
+    border-color: #1A73E8;
+    color: #FFFFFF;
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.25), 0 2px 6px rgba(26, 115, 232, 0.35);
+  }
+
+  .mobile-milestone-pill.is-completed .mobile-pip {
+    background: #1E8E3E;
+    border-color: #1E8E3E;
+    color: #FFFFFF;
+    box-shadow: 0 1px 4px rgba(30, 142, 62, 0.25);
+  }
+
+  .mobile-pip-check {
     font-size: 0.75rem;
+    line-height: 1;
+  }
+
+  .mobile-pip-num {
+    line-height: 1;
+  }
+
+  .form-card-container {
+    background: rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
   }
 
   .step-pane {

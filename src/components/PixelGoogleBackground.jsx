@@ -205,6 +205,29 @@ const BIRD_WING_DOWN = [
   '.........XX.........'
 ];
 
+// Exact Pixel Airplane Matrix from User's Uploaded Reference (38x19 pixels)
+const PIXEL_AIRPLANE = [
+  '......XXX.............................',
+  '......XWWX............................',
+  '......XWWWX...........................',
+  '......XWWWX...........................',
+  '......XWWWX...........................',
+  '......XWWWX...........................',
+  '......XWWWX...........................',
+  '......XWWWWX..........................',
+  '......XWWWWWX.........................',
+  '......XWWWWWWXXXXXXXXXXXXXXXXXXXXXX...',
+  'XXXXXXXWWWWWWWWWWWWWWWWWWWWWWWWWWWWX..',
+  '.XWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWXXX.',
+  '..XXXXXWWWWWXXWWXXWWXXWWXXWWXXWWWWXXXX',
+  '......XWWWWWXXWWXXWWXXWWXXWWXXWWWWXXXX',
+  '.......XWWWWWWWWWWWWWWWWWWWWWWWWWWWWWX',
+  '........XWWWWWWWWWWWWWXXXXWWWWWWWWWWX.',
+  '.........XXXXXXXXXXXXXXWWWXXXXXXXXXX..',
+  '......................XWWWX...........',
+  '......................XXXX............'
+];
+
 export default function PixelGoogleBackground() {
   const canvasRef = useRef(null);
 
@@ -260,6 +283,16 @@ export default function PixelGoogleBackground() {
       { x: width * 0.86, y: isMobile ? 80 : 130, color: '#34A853', phase: 4.5 }
     ];
 
+    // Flying Pixel Airplane from Reference Image (Cruises smoothly left to right)
+    let plane = {
+      x: -160,
+      y: isMobile ? 85 : 125,
+      baseY: isMobile ? 85 : 125,
+      speed: isMobile ? 1.35 : 1.85,
+      scale: isMobile ? 1.75 : 2.65,
+      contrailPuffs: []
+    };
+
     const drawPixelMatrix = (matrix, startX, startY, defaultColor, scale = obstacleScale) => {
       for (let r = 0; r < matrix.length; r++) {
         for (let c = 0; c < matrix[r].length; c++) {
@@ -303,6 +336,9 @@ export default function PixelGoogleBackground() {
       dinoScale = isMobile ? 3.8 : 6.5;
       obstacleScale = isMobile ? 2.4 : 3.8;
       speed = isMobile ? 3.2 : 4.5;
+      plane.scale = isMobile ? 1.75 : 2.65;
+      plane.baseY = isMobile ? 85 : 125;
+      plane.speed = isMobile ? 1.35 : 1.85;
     };
     window.addEventListener('resize', handleResize);
 
@@ -331,6 +367,45 @@ export default function PixelGoogleBackground() {
         if (cloud.x < -260) cloud.x = width + 100;
         drawPixelMatrix(BIG_WHITISH_CLOUD, cloud.x, cloud.y, '#CBD5E1', cloud.scale);
       });
+
+      // 2.5 Draw Flying Pixel Airplane (User Reference: Cruises left-to-right with bobbing & vapor puffs)
+      plane.x += plane.speed;
+      plane.y = plane.baseY + Math.sin(frame * 0.035) * 5;
+
+      // Spawn subtle contrail puffs behind airplane tail/engine
+      if (frame % 7 === 0) {
+        plane.contrailPuffs.push({
+          x: plane.x + 3 * plane.scale,
+          y: plane.y + 11 * plane.scale + (Math.random() - 0.5) * 2,
+          size: plane.scale * (Math.random() > 0.5 ? 2.2 : 3.2),
+          opacity: 0.7,
+          life: 0
+        });
+      }
+
+      // Draw and dissipate contrail puffs
+      for (let i = plane.contrailPuffs.length - 1; i >= 0; i--) {
+        const puff = plane.contrailPuffs[i];
+        puff.life++;
+        puff.x -= 0.5;
+        puff.opacity -= 0.016;
+        if (puff.opacity <= 0 || puff.life > 45) {
+          plane.contrailPuffs.splice(i, 1);
+        } else {
+          ctx.fillStyle = `rgba(225, 235, 245, ${Math.max(puff.opacity, 0)})`;
+          ctx.fillRect(Math.round(puff.x), Math.round(puff.y), Math.ceil(puff.size), Math.ceil(puff.size));
+        }
+      }
+
+      // Draw pixel airplane sprite
+      drawPixelMatrix(PIXEL_AIRPLANE, plane.x, plane.y, '#202124', plane.scale);
+
+      // Loop airplane back to left with varied cruise altitude
+      const planeWidth = 38 * plane.scale;
+      if (plane.x > width + 80) {
+        plane.x = -planeWidth - 60;
+        plane.baseY = (isMobile ? 70 : 105) + Math.random() * (isMobile ? 55 : 85);
+      }
 
       // 3. Draw Flying Chrome Dino Pterodactyl Birds below clouds (Flapping Wings UP / Wings DOWN)
       const birdFrame = Math.floor(frame / 14) % 2 === 0 ? BIRD_WING_UP : BIRD_WING_DOWN;

@@ -28,9 +28,25 @@ import { sound } from '../utils/sound';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
+const getStoredToken = () => {
+  try {
+    return localStorage.getItem('gdg_admin_token') || sessionStorage.getItem('gdg_admin_token') || '';
+  } catch {
+    return '';
+  }
+};
+
+const getStoredAdmin = () => {
+  try {
+    return localStorage.getItem('gdg_admin_user') || sessionStorage.getItem('gdg_admin_user') || '';
+  } catch {
+    return '';
+  }
+};
+
 export default function AdminPortal() {
-  const [token, setToken] = useState(() => sessionStorage.getItem('gdg_admin_token') || '');
-  const [adminUser, setAdminUser] = useState(() => sessionStorage.getItem('gdg_admin_user') || '');
+  const [token, setToken] = useState(getStoredToken);
+  const [adminUser, setAdminUser] = useState(getStoredAdmin);
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -45,14 +61,17 @@ export default function AdminPortal() {
   const [isExporting, setIsExporting] = useState(false);
   const [databaseSource, setDatabaseSource] = useState('Secure Database');
 
-  // Verify existing token on mount
+  // Verify existing token on initial mount
   useEffect(() => {
-    if (token) {
-      verifyToken(token);
+    const existing = getStoredToken();
+    if (existing) {
+      verifyToken(existing);
     }
-  }, [token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const verifyToken = async (tok) => {
+    if (!tok) return;
     try {
       const res = await fetch(`${API_BASE}/api/admin/verify`, {
         headers: { Authorization: `Bearer ${tok}` }
@@ -61,8 +80,11 @@ export default function AdminPortal() {
         const data = await res.json();
         setDatabaseSource(data.database || 'Database Online');
         fetchCandidates(tok);
-      } else {
+      } else if (res.status === 401) {
         handleLogout();
+      } else {
+        // Non-401 errors (e.g. temporary server glitch) should not log out the admin
+        fetchCandidates(tok);
       }
     } catch {
       fetchCandidates(tok);
@@ -113,6 +135,8 @@ export default function AdminPortal() {
 
       const data = await res.json();
       if (res.ok && data.success) {
+        localStorage.setItem('gdg_admin_token', data.token);
+        localStorage.setItem('gdg_admin_user', data.admin);
         sessionStorage.setItem('gdg_admin_token', data.token);
         sessionStorage.setItem('gdg_admin_user', data.admin);
         setToken(data.token);
@@ -138,6 +162,8 @@ export default function AdminPortal() {
         headers: { Authorization: `Bearer ${token}` }
       }).catch(() => {});
     }
+    localStorage.removeItem('gdg_admin_token');
+    localStorage.removeItem('gdg_admin_user');
     sessionStorage.removeItem('gdg_admin_token');
     sessionStorage.removeItem('gdg_admin_user');
     setToken('');
