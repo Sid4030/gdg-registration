@@ -339,6 +339,10 @@ export default function AdminPortal() {
             <Database size={13} className="text-emerald-500" />
             <span>{databaseSource}</span>
           </div>
+          <div className="closed-status-pill" style={{ padding: '0.2rem 0.65rem', fontSize: '0.75rem' }}>
+            <span className="closed-pulse-dot" style={{ width: 6, height: 6 }}></span>
+            <span>Registrations Closed</span>
+          </div>
         </div>
 
         <div className="admin-nav-right">

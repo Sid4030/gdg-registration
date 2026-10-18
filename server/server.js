@@ -143,50 +143,26 @@ const candidateSchema = new mongoose.Schema(
 
 const Candidate = mongoose.model('Candidate', candidateSchema);
 
-// Connect to MongoDB Atlas if URI is provided with serverless caching
-let cachedMongoPromise = null;
+// Registrations are officially closed - MongoDB database connection terminated
+isMongoConnected = false;
+
+// Cleanly close any lingering MongoDB connection
+if (mongoose.connection && mongoose.connection.readyState !== 0) {
+  mongoose.disconnect().then(() => {
+    console.log('🔒 Closed MongoDB Atlas connection (Registrations Closed).');
+  }).catch(() => {});
+}
+
 const connectMongo = async () => {
-  if (mongoose.connection.readyState === 1) {
-    isMongoConnected = true;
-    return mongoose.connection;
-  }
-  const mongoURI = process.env.MONGODB_URI;
-  if (!mongoURI || mongoURI.trim() === '') {
-    isMongoConnected = false;
-    return null;
-  }
-  if (!cachedMongoPromise) {
-    cachedMongoPromise = mongoose
-      .connect(mongoURI.trim(), {
-        serverSelectionTimeoutMS: 5000
-      })
-      .then((conn) => {
-        isMongoConnected = true;
-        console.log('✅ Connected to MongoDB Atlas successfully.');
-        return conn;
-      })
-      .catch((err) => {
-        isMongoConnected = false;
-        cachedMongoPromise = null;
-        console.warn('⚠️ MongoDB Atlas connection error, using resilient local storage:', err.message);
-        return null;
-      });
-  }
-  return cachedMongoPromise;
-};
-
-// Initial startup connection attempt
-connectMongo();
-
-// Serverless middleware to ensure DB connection is active before processing requests
-app.use(async (req, res, next) => {
-  if (process.env.MONGODB_URI && mongoose.connection.readyState !== 1) {
+  // Database connection deliberately disabled as registrations are closed
+  if (mongoose.connection && mongoose.connection.readyState !== 0) {
     try {
-      await connectMongo();
+      await mongoose.disconnect();
     } catch {}
   }
-  next();
-});
+  isMongoConnected = false;
+  return null;
+};
 
 // Helper to save to local backup
 const saveLocalBackup = (candidate) => {
@@ -237,81 +213,19 @@ const sanitizeInput = (val) => {
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    database: isMongoConnected ? 'MongoDB Atlas (Connected)' : 'Resilient Local Storage Mode',
+    registrations: 'closed',
+    database: 'Closed / Disconnected (Registrations Closed)',
     timestamp: new Date().toISOString()
   });
 });
 
-// Submit Registration
-app.post('/api/register', registrationLimiter, async (req, res) => {
-  try {
-    const rawData = req.body || {};
-
-    // 1. XSS Sanitization on all fields
-    const sanitized = sanitizeInput(rawData);
-
-    // 2. Validation
-    if (!sanitized.fullName || sanitized.fullName.length < 2) {
-      return res.status(400).json({ success: false, error: 'Full Name is required.' });
-    }
-    if (!sanitized.universityEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sanitized.universityEmail)) {
-      return res.status(400).json({ success: false, error: 'Valid University Email is required.' });
-    }
-    if (!sanitized.phone || sanitized.phone.length < 7) {
-      return res.status(400).json({ success: false, error: 'Valid Phone Number is required.' });
-    }
-    if (!sanitized.firstPreference) {
-      return res.status(400).json({ success: false, error: 'First team domain preference is required.' });
-    }
-    if (!sanitized.termsAgreed) {
-      return res.status(400).json({ success: false, error: 'Candidate Terms agreement is required.' });
-    }
-
-    // 3. Generate unique application ID
-    const randomHex = Math.floor(Math.random() * 0xffffff)
-      .toString(16)
-      .toUpperCase()
-      .padStart(6, '0');
-    const applicationId = `GDG-2026-${randomHex}`;
-
-    const candidateRecord = {
-      ...sanitized,
-      applicationId,
-      submittedAt: new Date().toISOString(),
-      ipAddress: req.ip || req.headers['x-forwarded-for'] || '127.0.0.1'
-    };
-
-    // 4. Save to Database (MongoDB Atlas if connected, plus backup)
-    let savedToDb = false;
-    if (isMongoConnected) {
-      try {
-        const doc = new Candidate(candidateRecord);
-        await doc.save();
-        savedToDb = true;
-      } catch (dbErr) {
-        console.error('MongoDB Atlas save failed, using local storage fallback:', dbErr.message);
-      }
-    }
-
-    // Always keep a local copy to guarantee zero data loss
-    saveLocalBackup(candidateRecord);
-
-    return res.status(201).json({
-      success: true,
-      message: 'Registration successfully received and stored!',
-      applicationId,
-      storageMode: savedToDb ? 'MongoDB Atlas' : 'Resilient Secure Storage',
-      candidate: {
-        applicationId,
-        fullName: candidateRecord.fullName,
-        firstPreference: candidateRecord.firstPreference,
-        submittedAt: candidateRecord.submittedAt
-      }
-    });
-  } catch (err) {
-    console.error('Registration processing error:', err);
-    return res.status(500).json({ success: false, error: 'Internal server error while storing application.' });
-  }
+// Submit Registration (CLOSED)
+app.post('/api/register', (req, res) => {
+  return res.status(403).json({
+    success: false,
+    closed: true,
+    error: 'Registrations are now officially closed. Thank you for your interest in GDG Amity!'
+  });
 });
 
 // -------------------------------------------------------------
@@ -460,49 +374,34 @@ app.get('/api/admin/verify', requireAdminAuth, (req, res) => {
     success: true,
     authenticated: true,
     admin: req.adminUser,
-    database: isMongoConnected ? 'MongoDB Atlas (Connected)' : 'Resilient Secure Storage'
+    database: 'Closed (Secure Local Vault)'
   });
 });
 
 // View all candidates (STRICTLY PROTECTED: requires admin authentication)
 app.get('/api/admin/candidates', requireAdminAuth, async (req, res) => {
   try {
-    if (isMongoConnected) {
-      const candidates = await Candidate.find().sort({ submittedAt: -1 }).lean();
-      return res.json({ success: true, source: 'MongoDB Atlas', count: candidates.length, candidates });
-    }
     const local = readLocalBackup();
-    return res.json({ success: true, source: 'Local Storage', count: local.length, candidates: local });
+    return res.json({ success: true, source: 'Local Storage (Vault)', count: local.length, candidates: local });
   } catch (err) {
-    const local = readLocalBackup();
-    return res.json({ success: true, source: 'Local Storage (Fallback)', count: local.length, candidates: local });
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 
 // Legacy /api/candidates now requires admin auth to prevent unauthorized public scraping
 app.get('/api/candidates', requireAdminAuth, async (req, res) => {
   try {
-    if (isMongoConnected) {
-      const candidates = await Candidate.find().sort({ submittedAt: -1 }).lean();
-      return res.json({ success: true, source: 'MongoDB Atlas', count: candidates.length, candidates });
-    }
     const local = readLocalBackup();
-    return res.json({ success: true, source: 'Local Storage', count: local.length, candidates: local });
+    return res.json({ success: true, source: 'Local Storage (Vault)', count: local.length, candidates: local });
   } catch (err) {
-    const local = readLocalBackup();
-    return res.json({ success: true, source: 'Local Storage (Fallback)', count: local.length, candidates: local });
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 
 // One-Click Export to Excel (.csv with UTF-8 BOM for seamless Microsoft Excel compatibility)
 app.get('/api/admin/export', requireAdminAuth, async (req, res) => {
   try {
-    let list = [];
-    if (isMongoConnected) {
-      list = await Candidate.find().sort({ submittedAt: -1 }).lean();
-    } else {
-      list = readLocalBackup();
-    }
+    const list = readLocalBackup();
 
     const headers = [
       'Application ID',
@@ -599,12 +498,7 @@ app.get('/api/admin/export', requireAdminAuth, async (req, res) => {
 // Stats summary (Requires admin auth to protect community metrics)
 app.get('/api/stats', requireAdminAuth, async (req, res) => {
   try {
-    let list = [];
-    if (isMongoConnected) {
-      list = await Candidate.find().lean();
-    } else {
-      list = readLocalBackup();
-    }
+    const list = readLocalBackup();
 
     const domainBreakdown = {};
     list.forEach((c) => {
@@ -614,9 +508,10 @@ app.get('/api/stats', requireAdminAuth, async (req, res) => {
 
     res.json({
       success: true,
+      registrations: 'closed',
       totalCandidates: list.length,
       domainBreakdown,
-      databaseStatus: isMongoConnected ? 'MongoDB Atlas Online' : 'Local Storage Active'
+      databaseStatus: 'Closed / Vault Storage Active'
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

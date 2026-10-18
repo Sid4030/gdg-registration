@@ -42,6 +42,7 @@ import ExperienceGauge from './components/ExperienceGauge';
 import GoogleTechCloud from './components/GoogleTechCloud';
 import CandidatePass from './components/CandidatePass';
 import AdminPortal from './components/AdminPortal';
+import RegistrationsClosed from './components/RegistrationsClosed';
 import Lenis from 'lenis';
 
 import { sound } from './utils/sound';
@@ -107,8 +108,17 @@ export default function App() {
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [errors, setErrors] = useState({});
   const [lastSaved, setLastSaved] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedData, setSubmittedData] = useState(null);
+  const [savedSubmission, setSavedSubmission] = useState(null);
+  const REGISTRATIONS_CLOSED = true;
+
+  // Load existing submission if candidate applied previously
+  useEffect(() => {
+    const existing = storage.loadSubmission();
+    if (existing) {
+      setSavedSubmission(existing);
+    }
+  }, []);
 
   const formCardRef = useRef(null);
   const totalSteps = 7;
@@ -470,10 +480,12 @@ export default function App() {
 
   const handleResetApplication = () => {
     setSubmittedData(null);
-    setFormData(INITIAL_FORM_DATA);
-    setCurrentStep(1);
-    setErrors({});
-    window.location.reload();
+    if (!REGISTRATIONS_CLOSED) {
+      setFormData(INITIAL_FORM_DATA);
+      setCurrentStep(1);
+      setErrors({});
+      window.location.reload();
+    }
   };
 
   return (
@@ -492,7 +504,16 @@ export default function App() {
 
       <main className="portal-page-body">
         <div className="portal-container">
-          {!submittedData ? (
+          {REGISTRATIONS_CLOSED ? (
+            submittedData ? (
+              <CandidatePass submission={submittedData} onReset={handleResetApplication} />
+            ) : (
+              <RegistrationsClosed
+                savedSubmission={savedSubmission}
+                onViewPass={(pass) => setSubmittedData(pass)}
+              />
+            )
+          ) : !submittedData ? (
             <>
               {/* Elevated Hero Typography */}
               <div className="portal-hero-block">

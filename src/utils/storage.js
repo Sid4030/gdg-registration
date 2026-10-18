@@ -38,6 +38,16 @@ export const storage = {
     } catch (e) {}
   },
 
+  loadSubmission() {
+    try {
+      const raw = localStorage.getItem(SUBMISSION_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) {
+      return null;
+    }
+  },
+
   generateApplicationId() {
     const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
     let rand = '';

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, Printer, RefreshCw, Sparkles, ShieldCheck } from 'lucide-react';
+import { Copy, Check, Printer, ArrowLeft, Sparkles, ShieldCheck } from 'lucide-react';
 import { sound } from '../utils/sound';
 
 export default function CandidatePass({ submission, onReset }) {
@@ -114,8 +114,8 @@ export default function CandidatePass({ submission, onReset }) {
         </button>
 
         <button type="button" className="btn-pass-action ghost" onClick={onReset}>
-          <RefreshCw size={15} />
-          <span>New Application</span>
+          <ArrowLeft size={15} />
+          <span>Back to Overview</span>
         </button>
       </div>
 

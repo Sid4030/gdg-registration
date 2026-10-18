@@ -49,6 +49,7 @@ export default function Navbar() {
 
             <span className="nav-chapter-title">
               Google Developer Groups on Campus • <strong>Amity University Noida</strong>
+              <span className="nav-closed-tag">Registrations Closed</span>
             </span>
           </div>
         </div>
