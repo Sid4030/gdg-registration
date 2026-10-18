@@ -249,7 +249,6 @@ export default function RegistrationsClosed({ savedSubmission, onViewPass }) {
           </div>
         </div>
       </div>
-
     </div>
   );
 }
