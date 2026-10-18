@@ -143,26 +143,50 @@ const candidateSchema = new mongoose.Schema(
 
 const Candidate = mongoose.model('Candidate', candidateSchema);
 
-// Registrations are officially closed - MongoDB database connection terminated
-isMongoConnected = false;
-
-// Cleanly close any lingering MongoDB connection
-if (mongoose.connection && mongoose.connection.readyState !== 0) {
-  mongoose.disconnect().then(() => {
-    console.log('🔒 Closed MongoDB Atlas connection (Registrations Closed).');
-  }).catch(() => {});
-}
-
+// Connect to MongoDB Atlas if URI is provided with serverless connection pooling
+let cachedMongoPromise = null;
 const connectMongo = async () => {
-  // Database connection deliberately disabled as registrations are closed
-  if (mongoose.connection && mongoose.connection.readyState !== 0) {
+  if (mongoose.connection.readyState === 1) {
+    isMongoConnected = true;
+    return mongoose.connection;
+  }
+  const mongoURI = process.env.MONGODB_URI;
+  if (!mongoURI || mongoURI.trim() === '') {
+    isMongoConnected = false;
+    return null;
+  }
+  if (!cachedMongoPromise) {
+    cachedMongoPromise = mongoose
+      .connect(mongoURI.trim(), {
+        serverSelectionTimeoutMS: 5000
+      })
+      .then((conn) => {
+        isMongoConnected = true;
+        console.log('✅ Connected to MongoDB Atlas successfully.');
+        return conn;
+      })
+      .catch((err) => {
+        isMongoConnected = false;
+        cachedMongoPromise = null;
+        console.warn('⚠️ MongoDB Atlas connection error, using resilient local storage:', err.message);
+        return null;
+      });
+  }
+  return cachedMongoPromise;
+};
+
+// Initial startup connection attempt
+connectMongo();
+
+// Serverless middleware to ensure DB connection is active before processing requests
+app.use(async (req, res, next) => {
+  if (process.env.MONGODB_URI && mongoose.connection.readyState !== 1) {
     try {
-      await mongoose.disconnect();
+      await connectMongo();
     } catch {}
   }
-  isMongoConnected = false;
-  return null;
-};
+  next();
+});
 
 // Helper to save to local backup
 const saveLocalBackup = (candidate) => {
@@ -214,7 +238,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     registrations: 'closed',
-    database: 'Closed / Disconnected (Registrations Closed)',
+    database: isMongoConnected ? 'MongoDB Atlas (Connected)' : 'Resilient Secure Local Vault',
     timestamp: new Date().toISOString()
   });
 });
@@ -227,6 +251,106 @@ app.post('/api/register', (req, res) => {
     error: 'Registrations are now officially closed. Thank you for your interest in GDG Amity!'
   });
 });
+
+// Rate limiter specifically for pass lookup: 60 requests per 15 minutes per IP
+const lookupLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  message: {
+    success: false,
+    error: 'Too many lookup attempts. Please wait a few minutes before trying again.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Candidate Pass Retrieval Endpoint (Public: allows registered candidates to retrieve their verified pass)
+const handleCandidateLookup = async (req, res) => {
+  try {
+    const rawQuery = (req.query.query || req.body?.query || req.query.email || req.query.id || '').trim();
+    if (!rawQuery || rawQuery.length < 3) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please provide a valid Application ID or registered Email.'
+      });
+    }
+
+    const clean = sanitizeInput(rawQuery);
+    const escaped = clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`^${escaped}$`, 'i');
+
+    let foundCandidate = null;
+
+    // 1. Search in MongoDB Atlas if connected
+    if (isMongoConnected) {
+      try {
+        foundCandidate = await Candidate.findOne({
+          $or: [
+            { applicationId: regex },
+            { universityEmail: regex },
+            { personalEmail: regex }
+          ]
+        }).lean();
+      } catch (dbErr) {
+        console.warn('MongoDB query failed during candidate lookup, checking vault:', dbErr.message);
+      }
+    }
+
+    // 2. Fallback to local storage vault if not found in MongoDB or if MongoDB is disconnected
+    if (!foundCandidate) {
+      const local = readLocalBackup();
+      foundCandidate = local.find((c) => {
+        const appIdMatch = c.applicationId && c.applicationId.toLowerCase() === clean.toLowerCase();
+        const uniEmailMatch = c.universityEmail && c.universityEmail.toLowerCase() === clean.toLowerCase();
+        const persEmailMatch = c.personalEmail && c.personalEmail.toLowerCase() === clean.toLowerCase();
+        return appIdMatch || uniEmailMatch || persEmailMatch;
+      });
+    }
+
+    if (!foundCandidate) {
+      return res.status(404).json({
+        success: false,
+        error: 'No application found matching this ID or Email. Please check your spelling or contact the GDG team.'
+      });
+    }
+
+    // Format safe verified pass object
+    const passData = {
+      applicationId: foundCandidate.applicationId,
+      fullName: foundCandidate.fullName,
+      universityEmail: foundCandidate.universityEmail,
+      personalEmail: foundCandidate.personalEmail || '',
+      phone: foundCandidate.phone || '',
+      course: foundCandidate.course || 'Amity University Noida',
+      yearSemester: foundCandidate.yearSemester || 'Student Record',
+      section: foundCandidate.section || '',
+      firstPreference: foundCandidate.firstPreference || (foundCandidate.selectedDomains ? foundCandidate.selectedDomains[0] : 'Core Member'),
+      selectedDomains: foundCandidate.selectedDomains || [foundCandidate.firstPreference || 'Core Member'],
+      submittedAt: foundCandidate.submittedAt
+        ? new Date(foundCandidate.submittedAt).toLocaleString('en-IN', {
+            dateStyle: 'medium',
+            timeStyle: 'short'
+          })
+        : 'October 2026'
+    };
+
+    return res.json({
+      success: true,
+      candidate: passData
+    });
+  } catch (err) {
+    console.error('Candidate lookup error:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'An unexpected error occurred while looking up candidate records.'
+    });
+  }
+};
+
+app.get('/api/lookup', lookupLimiter, handleCandidateLookup);
+app.post('/api/lookup', lookupLimiter, handleCandidateLookup);
+app.get('/api/candidate/lookup', lookupLimiter, handleCandidateLookup);
+app.post('/api/candidate/lookup', lookupLimiter, handleCandidateLookup);
 
 // -------------------------------------------------------------
 // 3.5 ADMIN AUTHENTICATION & STATELESS SIGNED SESSIONS
@@ -374,34 +498,49 @@ app.get('/api/admin/verify', requireAdminAuth, (req, res) => {
     success: true,
     authenticated: true,
     admin: req.adminUser,
-    database: 'Closed (Secure Local Vault)'
+    database: isMongoConnected ? 'MongoDB Atlas (Connected)' : 'Resilient Secure Local Vault'
   });
 });
 
 // View all candidates (STRICTLY PROTECTED: requires admin authentication)
 app.get('/api/admin/candidates', requireAdminAuth, async (req, res) => {
   try {
+    if (isMongoConnected) {
+      const candidates = await Candidate.find().sort({ submittedAt: -1 }).lean();
+      return res.json({ success: true, source: 'MongoDB Atlas', count: candidates.length, candidates });
+    }
     const local = readLocalBackup();
     return res.json({ success: true, source: 'Local Storage (Vault)', count: local.length, candidates: local });
   } catch (err) {
-    return res.status(500).json({ success: false, error: err.message });
+    const local = readLocalBackup();
+    return res.json({ success: true, source: 'Local Storage (Fallback)', count: local.length, candidates: local });
   }
 });
 
 // Legacy /api/candidates now requires admin auth to prevent unauthorized public scraping
 app.get('/api/candidates', requireAdminAuth, async (req, res) => {
   try {
+    if (isMongoConnected) {
+      const candidates = await Candidate.find().sort({ submittedAt: -1 }).lean();
+      return res.json({ success: true, source: 'MongoDB Atlas', count: candidates.length, candidates });
+    }
     const local = readLocalBackup();
     return res.json({ success: true, source: 'Local Storage (Vault)', count: local.length, candidates: local });
   } catch (err) {
-    return res.status(500).json({ success: false, error: err.message });
+    const local = readLocalBackup();
+    return res.json({ success: true, source: 'Local Storage (Fallback)', count: local.length, candidates: local });
   }
 });
 
 // One-Click Export to Excel (.csv with UTF-8 BOM for seamless Microsoft Excel compatibility)
 app.get('/api/admin/export', requireAdminAuth, async (req, res) => {
   try {
-    const list = readLocalBackup();
+    let list = [];
+    if (isMongoConnected) {
+      list = await Candidate.find().sort({ submittedAt: -1 }).lean();
+    } else {
+      list = readLocalBackup();
+    }
 
     const headers = [
       'Application ID',
@@ -498,7 +637,12 @@ app.get('/api/admin/export', requireAdminAuth, async (req, res) => {
 // Stats summary (Requires admin auth to protect community metrics)
 app.get('/api/stats', requireAdminAuth, async (req, res) => {
   try {
-    const list = readLocalBackup();
+    let list = [];
+    if (isMongoConnected) {
+      list = await Candidate.find().lean();
+    } else {
+      list = readLocalBackup();
+    }
 
     const domainBreakdown = {};
     list.forEach((c) => {
@@ -511,7 +655,7 @@ app.get('/api/stats', requireAdminAuth, async (req, res) => {
       registrations: 'closed',
       totalCandidates: list.length,
       domainBreakdown,
-      databaseStatus: 'Closed / Vault Storage Active'
+      databaseStatus: isMongoConnected ? 'MongoDB Atlas Online' : 'Local Storage Active'
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

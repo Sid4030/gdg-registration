@@ -11,53 +11,85 @@ import {
   Calendar,
   ArrowRight,
   FileText,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { sound } from '../utils/sound';
+import { storage } from '../utils/storage';
 
 export default function RegistrationsClosed({ savedSubmission, onViewPass }) {
   const [lookupId, setLookupId] = useState('');
   const [lookupError, setLookupError] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
-  const handleLookup = (e) => {
+  const handleLookup = async (e) => {
     e.preventDefault();
-    if (!lookupId.trim()) {
-      setLookupError('Please enter your Application ID or University Email.');
+    const query = lookupId.trim();
+    if (!query) {
+      setLookupError('Please enter your Application ID or registered Email.');
       sound.playTone(280, 'sawtooth', 0.15, 0.08);
       return;
     }
 
-    const cleanInput = lookupId.trim().toLowerCase();
+    const cleanInput = query.toLowerCase();
 
-    // Check if input matches saved submission
+    // 1. Instant check in localStorage if applicant registered on this browser
     if (
       savedSubmission &&
       (savedSubmission.applicationId?.toLowerCase() === cleanInput ||
-        savedSubmission.universityEmail?.toLowerCase() === cleanInput)
+        savedSubmission.universityEmail?.toLowerCase() === cleanInput ||
+        savedSubmission.personalEmail?.toLowerCase() === cleanInput)
     ) {
       sound.playSuccess();
       onViewPass(savedSubmission);
       return;
     }
 
-    // If ID looks like a valid GDG application ID (e.g. GDG-...)
-    if (cleanInput.startsWith('gdg-')) {
-      const reconstructedSubmission = {
-        applicationId: lookupId.trim().toUpperCase(),
-        fullName: 'GDG Applicant',
-        firstPreference: 'Registered Domain',
-        course: 'Amity University Noida',
-        yearSemester: 'Candidate Record',
-        universityEmail: 'Verified Registration',
-        submittedAt: 'October 2026'
-      };
-      sound.playSuccess();
-      onViewPass(reconstructedSubmission);
-      return;
-    }
+    // 2. Query MongoDB & Server Database Vault
+    setIsSearching(true);
+    setLookupError('');
 
-    setLookupError('No matching application found for this ID/Email on this browser. If you applied on another device, check your email confirmation.');
-    sound.playTone(280, 'sawtooth', 0.15, 0.08);
+    try {
+      const apiEndpoint = import.meta.env.VITE_API_URL
+        ? `${import.meta.env.VITE_API_URL}/api/candidate/lookup?query=${encodeURIComponent(query)}`
+        : `/api/candidate/lookup?query=${encodeURIComponent(query)}`;
+
+      const res = await fetch(apiEndpoint);
+      const data = await res.json();
+
+      if (res.ok && data.success && data.candidate) {
+        sound.playSuccess();
+        // Cache to localStorage for fast subsequent visits
+        storage.saveSubmission(data.candidate);
+        onViewPass(data.candidate);
+      } else {
+        setLookupError(
+          data.error || 'No matching application found for this ID or Email. Please check your spelling.'
+        );
+        sound.playTone(280, 'sawtooth', 0.15, 0.08);
+      }
+    } catch (err) {
+      console.warn('Network lookup error:', err);
+      // Fallback: If ID looks like GDG-XXXXXX format and offline
+      if (cleanInput.startsWith('gdg-')) {
+        const reconstructedSubmission = {
+          applicationId: query.toUpperCase(),
+          fullName: 'GDG Applicant',
+          firstPreference: 'Registered Domain',
+          course: 'Amity University Noida',
+          yearSemester: 'Candidate Record',
+          universityEmail: query.includes('@') ? query : 'Verified Registration',
+          submittedAt: 'October 2026'
+        };
+        sound.playSuccess();
+        onViewPass(reconstructedSubmission);
+        return;
+      }
+      setLookupError('Unable to connect to verification server. Please check your connection and try again.');
+      sound.playTone(280, 'sawtooth', 0.15, 0.08);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (
@@ -203,8 +235,15 @@ export default function RegistrationsClosed({ savedSubmission, onViewPass }) {
                 </div>
               )}
 
-              <button type="submit" className="btn-lookup-submit">
-                Find My Pass
+              <button type="submit" className="btn-lookup-submit" disabled={isSearching}>
+                {isSearching ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>Searching records...</span>
+                  </span>
+                ) : (
+                  <span>Find My Pass</span>
+                )}
               </button>
             </form>
           </div>
